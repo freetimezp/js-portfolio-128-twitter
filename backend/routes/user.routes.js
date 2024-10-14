@@ -11,7 +11,7 @@ import {
 
 const router = express.Router();
 
-//get user profile
+//get user controllers
 router.get("/profile/:username", protectRoute, getUserProfile);
 router.get("/suggested", protectRoute, getSuggestedUsers);
 router.post("/follow/:id", protectRoute, followUnfollowUser);
