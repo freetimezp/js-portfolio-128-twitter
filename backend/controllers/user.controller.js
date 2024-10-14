@@ -70,3 +70,35 @@ export const followUnfollowUser = async (req, res) => {
         res.status(500).json({ error: "Error in User controller!" });
     }
 };
+
+
+export const getSuggestedUsers = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const usersFollowedByMe = await User.findById(userId).select("following");
+
+        const users = await User.aggregate([
+            {
+                $match: {
+                    _id: { $ne: userId }
+                }
+            },
+            {
+                $sample: { size: 10 }
+            }
+        ]);
+
+        //filter users that I'm already following
+        const filteredUsers = users.filter(user => !usersFollowedByMe.following.includes(user._id));
+        const suggestedUsers = filteredUsers.slice(0, 4);
+
+        suggestedUsers.forEach(user => user.password = null);
+
+        res.status(200).json(suggestedUsers);
+
+    } catch (error) {
+        console.log("Error in getSuggestedUsers: ", error.message);
+        res.status(500).json({ error: "Error in User controller!" });
+    }
+};
