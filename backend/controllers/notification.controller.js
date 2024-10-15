@@ -19,3 +19,17 @@ export const getNotifications = async (req, res) => {
         res.status(500).json({ error: "Error in User controller!" });
     }
 };
+
+export const deleteNotifications = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        await Notification.deleteMany({ to: userId });
+
+        res.status(200).json({ message: "Notifications deleted successfully" });
+
+    } catch (error) {
+        console.log("Error in deleteNotifications: ", error.message);
+        res.status(500).json({ error: "Error in User controller!" });
+    }
+}
