@@ -1,11 +1,7 @@
+/* eslint-disable react/prop-types */
+const LoadingSpinner = ({ size = "md" }) => {
+    const sizeClass = `loading-${size}`;
 
-
-const LoadingSpinner = () => {
-    return (
-        <div>
-            LoadingSpinner
-        </div>
-    );
-}
-
+    return <span className={`loading loading-spinner ${sizeClass}`} />;
+};
 export default LoadingSpinner;
