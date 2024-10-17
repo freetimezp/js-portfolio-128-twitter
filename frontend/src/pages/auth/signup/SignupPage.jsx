@@ -24,6 +24,8 @@ const SignupPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const isError = false;
+
     return (
         <div className='max-w-screen-xl mx-auto flex h-screen px-10'>
             <div className='flex-1 hidden lg:flex items-center  justify-center'>
@@ -90,6 +92,7 @@ const SignupPage = () => {
                     <button className='btn rounded-full btn-primary text-white'>
                         Sign up
                     </button>
+                    {isError && <p className='text-red-500'>Something wrong..</p>}
                 </form>
                 <div className='flex flex-col lg:w-2/3 gap-2 mt-4'>
                     <p className='text-white text-lg'>Already have an account?</p>
