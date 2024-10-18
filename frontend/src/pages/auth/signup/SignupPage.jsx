@@ -77,7 +77,8 @@ const SignupPage = () => {
                             placeholder='Email'
                             name='email'
                             onChange={handleInputChange}
-                            value={formData.email}
+                            value={formData.email || ""}
+                            autoComplete="new-email"
                         />
                     </label>
 
@@ -87,11 +88,12 @@ const SignupPage = () => {
 
                             <input
                                 type='text'
-                                className='grow '
+                                className='grow'
                                 placeholder='Username'
                                 name='username'
                                 onChange={handleInputChange}
-                                value={formData.username}
+                                value={formData.username || ""}
+                                autoComplete="new-username"
                             />
                         </label>
 
@@ -105,6 +107,7 @@ const SignupPage = () => {
                                 name='fullName'
                                 onChange={handleInputChange}
                                 value={formData.fullName}
+                                autoComplete="new-fullname"
                             />
                         </label>
                     </div>
@@ -116,7 +119,8 @@ const SignupPage = () => {
                             placeholder='Password'
                             name='password'
                             onChange={handleInputChange}
-                            value={formData.password}
+                            value={formData.password || ""}
+                            autoComplete="new-password"
                         />
                     </label>
                     <button className='btn rounded-full btn-primary text-white'>

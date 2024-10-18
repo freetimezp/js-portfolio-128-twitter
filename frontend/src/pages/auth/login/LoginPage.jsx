@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import toast from "react-hot-toast";
+//import toast from "react-hot-toast";
 
 import XSvg from "../../../components/svgs/X";
 
@@ -15,6 +15,8 @@ const LoginPage = () => {
         username: "",
         password: "",
     });
+
+    const queryClient = useQueryClient();
 
     const { mutate: loginMutation, isError, isPending, error } = useMutation({
         mutationFn: async ({ username, password }) => {
@@ -39,7 +41,9 @@ const LoginPage = () => {
             }
         },
         onSuccess: () => {
-            toast.success("Login success!");
+            //toast.success("Login success!");
+
+            queryClient.invalidateQueries({ queryKey: ["authUser"] });
         }
     });
 
@@ -70,6 +74,7 @@ const LoginPage = () => {
                             name='username'
                             onChange={handleInputChange}
                             value={formData.username}
+                            autoComplete="new-username"
                         />
                     </label>
 
@@ -82,6 +87,7 @@ const LoginPage = () => {
                             name='password'
                             onChange={handleInputChange}
                             value={formData.password}
+                            autoComplete="new-password"
                         />
                     </label>
                     <button className='btn rounded-full btn-primary text-white'>
