@@ -25,11 +25,11 @@ function App() {
         if (data.error) return null;
         if (!res.ok) throw new Error("Failed to get profile!");
 
-        console.log("Auth user is here: ", data);
+        //console.log("Auth user is here: ", data);
         return data;
 
       } catch (error) {
-        console.log(error);
+        //console.log(error);
         throw new Error(error);
       }
     },
