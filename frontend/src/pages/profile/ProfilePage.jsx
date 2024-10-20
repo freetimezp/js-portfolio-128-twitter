@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+
+import { useQuery } from "@tanstack/react-query";
 
 import Posts from "../../components/common/Posts";
 import ProfileHeaderSkeleton from "../../components/skeletons/ProfileHeaderSkeleton";
@@ -11,6 +13,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
+import { formatMemberSinceDate } from "../../utils/date";
 
 const ProfilePage = () => {
     const [coverImg, setCoverImg] = useState(null);
@@ -20,22 +23,34 @@ const ProfilePage = () => {
     const coverImgRef = useRef(null);
     const profileImgRef = useRef(null);
 
-    let isLoading = false;
+    const { username } = useParams();
+
     let isMyProfile = true;
 
+    const { data: user, isLoading, refetch, isRefetching } = useQuery({
+        queryKey: ["userProfile"],
+        queryFn: async () => {
+            try {
+                const res = await fetch(`/api/users/profile/${username}`);
 
-    const user = {
-        _id: "1",
-        fullName: "John Doe",
-        username: "johndoe",
-        profileImg: "/avatars/boy2.jpg",
-        coverImg: "/bg.png",
-        bio: "Lorem ipsum lorem lorem lorem lorem",
-        link: "https://www.google.com",
-        following: ["1", "2", "3"],
-        followers: ["1", "2", "3"]
-    };
+                const data = await res.json();
 
+                if (!res.ok) throw new Error(data.error || "Something went wrong..");
+
+                return data;
+
+            } catch (error) {
+                throw new Error(error);
+            }
+        }
+    });
+
+    const memberSinceDate = formatMemberSinceDate(user?.createdAt);
+
+
+    useEffect(() => {
+        refetch();
+    }, [username, refetch]);
 
     const handleImgChange = (e, state) => {
         const file = e.target.files[0];
@@ -53,10 +68,12 @@ const ProfilePage = () => {
         <>
             <div className='flex-[4_4_0]  border-r border-gray-700 min-h-screen '>
                 {/* HEADER */}
-                {(isLoading) && <ProfileHeaderSkeleton />}
-                {!isLoading && !user && <p className='text-center text-lg mt-4'>User not found</p>}
+                {(isLoading || isRefetching) && <ProfileHeaderSkeleton />}
+
+                {!isLoading && !isRefetching && !user && <p className='text-center text-lg mt-4'>User not found</p>}
+
                 <div className='flex flex-col'>
-                    {!isLoading && user && (
+                    {!isLoading && !isRefetching && user && (
                         <>
                             <div className='flex gap-10 px-4 py-2 items-center'>
                                 <Link to='/'>
@@ -70,7 +87,7 @@ const ProfilePage = () => {
                             {/* COVER IMG */}
                             <div className='relative group/cover'>
                                 <img
-                                    src={coverImg || user?.coverImg || "/cover.png"}
+                                    src={coverImg || user?.coverImg || "/bg.png"}
                                     className='h-52 w-full object-cover'
                                     alt='cover image'
                                 />
@@ -102,7 +119,7 @@ const ProfilePage = () => {
                                 {/* USER AVATAR */}
                                 <div className='avatar absolute -bottom-16 left-4'>
                                     <div className='w-32 rounded-full relative group/avatar'>
-                                        <img src={profileImg || user?.profileImg || "/avatar-placeholder.png"} />
+                                        <img src={profileImg || user?.profileImg || "/avatars/avatar-placeholder.png"} />
 
                                         <div className='absolute top-5 right-3 p-1 bg-primary rounded-full 
                                             group-hover/avatar:opacity-100 opacity-0 cursor-pointer'>
@@ -150,12 +167,11 @@ const ProfilePage = () => {
                                             <>
                                                 <FaLink className='w-3 h-3 text-slate-500' />
                                                 <a
-                                                    href='https://youtube.com/@asaprogrammer_'
+                                                    href='https://www.youtube.com/@lifelovelaugh9740'
                                                     target='_blank'
                                                     rel='noreferrer'
                                                     className='text-sm text-blue-500 hover:underline'
                                                 >
-                                                    {/* Updated this after recording the video. I forgot to update this while recording, sorry, thx. */}
                                                     {user?.link}
                                                 </a>
                                             </>
@@ -163,7 +179,9 @@ const ProfilePage = () => {
                                     )}
                                     <div className='flex gap-2 items-center'>
                                         <IoCalendarOutline className='w-4 h-4 text-slate-500' />
-                                        <span className='text-sm text-slate-500'>date</span>
+                                        <span className='text-sm text-slate-500'>
+                                            {memberSinceDate}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className='flex gap-2'>
@@ -202,7 +220,7 @@ const ProfilePage = () => {
                         </>
                     )}
 
-                    <Posts feedType={feedType} username={user.username} userId={user?._id} />
+                    <Posts feedType={feedType} username={user?.username} userId={user?._id} />
                 </div>
             </div>
         </>
