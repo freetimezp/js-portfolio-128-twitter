@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { useQuery } from "@tanstack/react-query";
-
 import Posts from "../../components/common/Posts";
 import ProfileHeaderSkeleton from "../../components/skeletons/ProfileHeaderSkeleton";
 import EditProfileModal from "./EditProfileModal";
@@ -13,7 +11,11 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
+import { useQuery } from "@tanstack/react-query";
 import { formatMemberSinceDate } from "../../utils/date";
+
+import useFollow from "../../hooks/useFollow";
+import useUpdateUserProfile from "../../hooks/useUpdateUserProfile";
 
 const ProfilePage = () => {
     const [coverImg, setCoverImg] = useState(null);
@@ -25,32 +27,35 @@ const ProfilePage = () => {
 
     const { username } = useParams();
 
-    let isMyProfile = true;
+    const { follow, isPending } = useFollow();
+    const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 
-    const { data: user, isLoading, refetch, isRefetching } = useQuery({
+    const {
+        data: user,
+        isLoading,
+        refetch,
+        isRefetching,
+    } = useQuery({
         queryKey: ["userProfile"],
         queryFn: async () => {
             try {
                 const res = await fetch(`/api/users/profile/${username}`);
-
                 const data = await res.json();
-
-                if (!res.ok) throw new Error(data.error || "Something went wrong..");
-
+                if (!res.ok) {
+                    throw new Error(data.error || "Something went wrong");
+                }
                 return data;
-
             } catch (error) {
                 throw new Error(error);
             }
-        }
+        },
     });
 
+    const { isUpdatingProfile, updateProfile } = useUpdateUserProfile();
+
+    const isMyProfile = authUser._id === user?._id;
     const memberSinceDate = formatMemberSinceDate(user?.createdAt);
-
-
-    useEffect(() => {
-        refetch();
-    }, [username, refetch]);
+    const amIFollowing = authUser?.following.includes(user?._id);
 
     const handleImgChange = (e, state) => {
         const file = e.target.files[0];
@@ -64,14 +69,16 @@ const ProfilePage = () => {
         }
     };
 
+    useEffect(() => {
+        refetch();
+    }, [username, refetch]);
+
     return (
         <>
             <div className='flex-[4_4_0]  border-r border-gray-700 min-h-screen '>
                 {/* HEADER */}
                 {(isLoading || isRefetching) && <ProfileHeaderSkeleton />}
-
                 {!isLoading && !isRefetching && !user && <p className='text-center text-lg mt-4'>User not found</p>}
-
                 <div className='flex flex-col'>
                     {!isLoading && !isRefetching && user && (
                         <>
@@ -94,8 +101,7 @@ const ProfilePage = () => {
                                 {isMyProfile && (
                                     <div
                                         className='absolute top-2 right-2 rounded-full p-2 bg-gray-800 
-                                            bg-opacity-75 cursor-pointer opacity-0 group-hover/cover:opacity-100 
-                                            transition duration-200'
+                                        bg-opacity-75 cursor-pointer opacity-0 group-hover/cover:opacity-100 transition duration-200'
                                         onClick={() => coverImgRef.current.click()}
                                     >
                                         <MdEdit className='w-5 h-5 text-white' />
@@ -120,7 +126,6 @@ const ProfilePage = () => {
                                 <div className='avatar absolute -bottom-16 left-4'>
                                     <div className='w-32 rounded-full relative group/avatar'>
                                         <img src={profileImg || user?.profileImg || "/avatars/avatar-placeholder.png"} />
-
                                         <div className='absolute top-5 right-3 p-1 bg-primary rounded-full 
                                             group-hover/avatar:opacity-100 opacity-0 cursor-pointer'>
                                             {isMyProfile && (
@@ -134,22 +139,27 @@ const ProfilePage = () => {
                                 </div>
                             </div>
                             <div className='flex justify-end px-4 mt-5'>
-                                {isMyProfile && <EditProfileModal authUser={user} />}
-
+                                {isMyProfile && <EditProfileModal authUser={authUser} />}
                                 {!isMyProfile && (
                                     <button
                                         className='btn btn-outline rounded-full btn-sm'
-                                        onClick={""}
+                                        onClick={() => follow(user?._id)}
                                     >
-                                        Follow
+                                        {isPending && "Loading..."}
+                                        {!isPending && amIFollowing && "Unfollow"}
+                                        {!isPending && !amIFollowing && "Follow"}
                                     </button>
                                 )}
                                 {(coverImg || profileImg) && (
                                     <button
                                         className='btn btn-primary rounded-full btn-sm text-white px-4 ml-2'
-                                        onClick={""}
+                                        onClick={async () => {
+                                            await updateProfile({ coverImg, profileImg });
+                                            setProfileImg(null);
+                                            setCoverImg(null);
+                                        }}
                                     >
-                                        Update
+                                        {isUpdatingProfile ? "Updating..." : "Update"}
                                     </button>
                                 )}
                             </div>
@@ -167,7 +177,7 @@ const ProfilePage = () => {
                                             <>
                                                 <FaLink className='w-3 h-3 text-slate-500' />
                                                 <a
-                                                    href='https://www.youtube.com/@lifelovelaugh9740'
+                                                    href='https://youtube.com'
                                                     target='_blank'
                                                     rel='noreferrer'
                                                     className='text-sm text-blue-500 hover:underline'
@@ -179,9 +189,7 @@ const ProfilePage = () => {
                                     )}
                                     <div className='flex gap-2 items-center'>
                                         <IoCalendarOutline className='w-4 h-4 text-slate-500' />
-                                        <span className='text-sm text-slate-500'>
-                                            {memberSinceDate}
-                                        </span>
+                                        <span className='text-sm text-slate-500'>{memberSinceDate}</span>
                                     </div>
                                 </div>
                                 <div className='flex gap-2'>
@@ -198,7 +206,7 @@ const ProfilePage = () => {
                             <div className='flex w-full border-b border-gray-700 mt-4'>
                                 <div
                                     className='flex justify-center flex-1 p-3 hover:bg-secondary transition 
-                                        duration-300 relative cursor-pointer'
+                                    duration-300 relative cursor-pointer'
                                     onClick={() => setFeedType("posts")}
                                 >
                                     Posts
@@ -208,7 +216,7 @@ const ProfilePage = () => {
                                 </div>
                                 <div
                                     className='flex justify-center flex-1 p-3 text-slate-500 hover:bg-secondary 
-                                        transition duration-300 relative cursor-pointer'
+                                    transition duration-300 relative cursor-pointer'
                                     onClick={() => setFeedType("likes")}
                                 >
                                     Likes
@@ -220,7 +228,7 @@ const ProfilePage = () => {
                         </>
                     )}
 
-                    <Posts feedType={feedType} username={user?.username} userId={user?._id} />
+                    <Posts feedType={feedType} username={username} userId={user?._id} />
                 </div>
             </div>
         </>
